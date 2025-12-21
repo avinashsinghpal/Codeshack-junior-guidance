@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { getCurrentUser, logout } from '@/utils/auth';
+import { getCurrentUser, logout, isMentor } from '@/utils/auth';
+import MentorBadge from './MentorBadge';
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -38,14 +39,75 @@ export default function Sidebar() {
         router.push('/landing');
     };
 
-    const navItems = [
-        { name: 'Home', path: '/', icon: '🏠' },
-        { name: 'Dashboard', path: '/dashboard', icon: '📊' },
-        { name: 'Ask a Doubt', path: '/ask', icon: '❓' },
-        { name: 'Doubts', path: '/doubts', icon: '💬' },
-        { name: 'Junior Space', path: '/space', icon: '🌟' },
-        { name: 'Profile', path: '/profile', icon: '👤' },
+    // All navigation items with SVG icons
+    const allNavItems = [
+        {
+            name: 'Home',
+            path: '/',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                    <path d="M12 9l-7 7h4v5h6v-5h4l-7-7z" />
+                </svg>
+            ),
+            roles: ['junior', 'mentor', 'admin']
+        },
+        {
+            name: 'Dashboard',
+            path: '/dashboard',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                </svg>
+            ),
+            roles: ['junior', 'mentor', 'admin']
+        },
+        {
+            name: 'Ask a Doubt',
+            path: '/ask',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+            ),
+            roles: ['junior']
+        },
+        {
+            name: 'Doubts',
+            path: '/doubts',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                </svg>
+            ),
+            roles: ['junior', 'mentor', 'admin']
+        },
+        {
+            name: 'Junior Space',
+            path: '/space',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                </svg>
+            ),
+            roles: ['junior']
+        },
+        {
+            name: 'Profile',
+            path: '/profile',
+            icon: (
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+            ),
+            roles: ['junior', 'mentor', 'admin']
+        },
     ];
+
+    // Filter navigation items based on user role
+    const navItems = user
+        ? allNavItems.filter(item => item.roles.includes(user.role))
+        : allNavItems;
 
     return (
         <aside className="w-64 h-screen sticky top-0 flex flex-col border-r border-x-border p-4">
@@ -60,11 +122,11 @@ export default function Sidebar() {
                             key={item.path}
                             href={item.path}
                             className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${pathname === item.path
-                                    ? 'bg-x-blue/10 text-x-blue font-semibold'
-                                    : 'text-x-text hover:bg-x-hover'
+                                ? 'bg-x-blue/10 text-x-blue font-semibold'
+                                : 'text-x-text hover:bg-x-hover'
                                 }`}
                         >
-                            <span className="text-xl">{item.icon}</span>
+                            <span className="flex-shrink-0">{item.icon}</span>
                             <span className="text-lg">{item.name}</span>
                         </Link>
                     ))}
@@ -96,7 +158,10 @@ export default function Sidebar() {
                         </div>
 
                         <div className="flex-1 text-left overflow-hidden">
-                            <p className="text-sm font-semibold text-x-text truncate">{user.name}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-x-text truncate">{user.name}</p>
+                                {user.role === 'mentor' && <MentorBadge />}
+                            </div>
                             <p className="text-xs text-x-text-secondary truncate">@{user.name.replace(' ', '').toLowerCase()}</p>
                         </div>
 

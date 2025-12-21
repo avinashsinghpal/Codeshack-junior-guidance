@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import DoubtCard from '@/components/DoubtCard';
+import PageLoadingAnimation from '@/components/PageLoadingAnimation';
 import { getCurrentUser } from '@/utils/auth';
 import { doubts } from '@/data/mockData';
 
@@ -46,7 +47,8 @@ export default function DashboardPage() {
         <div className="flex bg-x-black min-h-screen justify-center">
             <Sidebar />
 
-            <main className="flex-1 border-r border-x-border max-w-2xl">
+            <main className="flex-1 border-r border-x-border max-w-2xl relative">
+                <PageLoadingAnimation />
                 <div className="sticky top-0 z-10 bg-x-black/80 backdrop-blur-md border-b border-x-border px-4 py-4">
                     <h1 className="text-xl font-bold text-x-text">Dashboard</h1>
                 </div>

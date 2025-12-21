@@ -11,14 +11,16 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const result = login(email, password);
+        setError('');
+
+        const result = await login(email, password);
 
         if (result.success) {
             router.push('/dashboard');
         } else {
-            setError(result.error);
+            setError(result.error || 'Login failed');
         }
     };
 
@@ -83,22 +85,6 @@ export default function LoginPage() {
                                 Sign up
                             </Link>
                         </p>
-                    </div>
-
-                    <div className="mt-6 p-4 bg-x-card rounded-xl border border-x-border">
-                        <p className="text-sm text-x-text-secondary mb-2">Demo Credentials:</p>
-                        <div className="space-y-2 text-sm">
-                            <div>
-                                <p className="text-x-text font-semibold">Mentor Account:</p>
-                                <p className="text-x-text-secondary">Email: priya@example.com</p>
-                                <p className="text-x-text-secondary">Password: password123</p>
-                            </div>
-                            <div className="mt-2">
-                                <p className="text-x-text font-semibold">Junior Account:</p>
-                                <p className="text-x-text-secondary">Email: rahul@example.com</p>
-                                <p className="text-x-text-secondary">Password: password123</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

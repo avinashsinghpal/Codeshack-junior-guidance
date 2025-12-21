@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import DoubtCard from '@/components/DoubtCard';
 import Tag from '@/components/Tag';
+import PageLoadingAnimation from '@/components/PageLoadingAnimation';
 import { doubts, availableTags } from '@/data/mockData';
 import { getCurrentUser } from '@/utils/auth';
 
@@ -49,7 +50,9 @@ export default function HomePage() {
         <div className="flex bg-x-black min-h-screen justify-center">
             <Sidebar />
 
-            <main className="flex-1 border-r border-x-border max-w-2xl">
+            <main className="flex-1 border-r border-x-border max-w-2xl relative">
+                <PageLoadingAnimation />
+
                 {/* Header */}
                 <div className="sticky top-0 z-10 bg-x-black/80 backdrop-blur-md border-b border-x-border">
                     <div className="flex items-center justify-between px-4 py-3">
@@ -84,8 +87,8 @@ export default function HomePage() {
                                                     type="button"
                                                     onClick={() => toggleTag(tag)}
                                                     className={`px-3 py-1 rounded-full text-sm transition-colors ${selectedTags.includes(tag)
-                                                        ? 'bg-x-blue text-white'
-                                                        : 'bg-x-black border border-x-border text-x-text-secondary hover:border-x-blue'
+                                                            ? 'bg-x-blue text-white'
+                                                            : 'bg-x-black border border-x-border text-x-text-secondary hover:border-x-blue'
                                                         }`}
                                                 >
                                                     {tag}
@@ -119,8 +122,8 @@ export default function HomePage() {
                                         type="submit"
                                         disabled={!postContent.trim()}
                                         className={`px-6 py-2 rounded-full font-semibold transition-colors ${postContent.trim()
-                                            ? 'bg-x-blue text-white hover:bg-x-blue/90'
-                                            : 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                                ? 'bg-x-blue text-white hover:bg-x-blue/90'
+                                                : 'bg-x-blue/50 text-white/50 cursor-not-allowed'
                                             }`}
                                     >
                                         Post

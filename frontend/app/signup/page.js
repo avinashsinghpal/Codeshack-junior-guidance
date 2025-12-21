@@ -12,6 +12,8 @@ export default function SignupPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('junior');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // Get role from URL params if present
@@ -21,12 +23,19 @@ export default function SignupPage() {
         }
     }, [searchParams]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const result = signup(name, email, password, role);
+        setError('');
+        setLoading(true);
+
+        const result = await signup(name, email, password, role);
+
+        setLoading(false);
 
         if (result.success) {
             router.push('/dashboard');
+        } else {
+            setError(result.error || 'Signup failed');
         }
     };
 
@@ -40,6 +49,12 @@ export default function SignupPage() {
 
                 <div className="bg-x-card rounded-xl p-8 border border-x-border">
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                                {error}
+                            </div>
+                        )}
+
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-x-text mb-2">
                                 Full Name
@@ -115,9 +130,13 @@ export default function SignupPage() {
 
                         <button
                             type="submit"
-                            className="w-full py-3 rounded-full bg-x-blue text-white font-semibold hover:bg-x-blue/90 transition-colors"
+                            disabled={loading}
+                            className={`w-full py-3 rounded-full font-semibold transition-colors ${loading
+                                    ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                    : 'bg-x-blue text-white hover:bg-x-blue/90'
+                                }`}
                         >
-                            Sign Up
+                            {loading ? 'Creating account...' : 'Sign Up'}
                         </button>
                     </form>
 

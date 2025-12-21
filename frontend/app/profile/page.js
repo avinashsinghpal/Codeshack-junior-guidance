@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import MentorBadge from '@/components/MentorBadge';
-import { getCurrentUser } from '@/utils/auth';
+import PageLoadingAnimation from '@/components/PageLoadingAnimation';
+import { getCurrentUser, logout } from '@/utils/auth';
 import { doubts, answers } from '@/data/mockData';
 
 export default function ProfilePage() {
+    const router = useRouter();
     const [user, setUser] = useState(null);
     const [stats, setStats] = useState({
         doubtsAsked: 0,
@@ -33,6 +36,11 @@ export default function ProfilePage() {
         }
     }, []);
 
+    const handleLogout = () => {
+        logout();
+        router.push('/landing');
+    };
+
     if (!user) {
         return (
             <div className="flex bg-x-black min-h-screen">
@@ -48,7 +56,8 @@ export default function ProfilePage() {
         <div className="flex bg-x-black min-h-screen justify-center">
             <Sidebar />
 
-            <main className="flex-1 border-r border-x-border max-w-2xl">
+            <main className="flex-1 border-r border-x-border max-w-2xl relative">
+                <PageLoadingAnimation />
                 <div className="sticky top-0 z-10 bg-x-black/80 backdrop-blur-md border-b border-x-border px-4 py-4">
                     <h1 className="text-xl font-bold text-x-text">Profile</h1>
                 </div>
@@ -70,6 +79,14 @@ export default function ProfilePage() {
                                 <p className="text-x-blue capitalize mt-1">{user.role}</p>
                             </div>
                         </div>
+
+                        {/* Logout Button */}
+                        <button
+                            onClick={handleLogout}
+                            className="w-full py-3 px-6 rounded-full border border-red-500/50 text-red-400 font-semibold hover:bg-red-500/10 transition-colors"
+                        >
+                            Logout
+                        </button>
                     </div>
 
                     {/* Stats */}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import Tag from '@/components/Tag';
+import PageLoadingAnimation from '@/components/PageLoadingAnimation';
 import { availableTags } from '@/data/mockData';
 
 export default function AskPage() {
@@ -34,7 +35,8 @@ export default function AskPage() {
         <div className="flex bg-x-black min-h-screen justify-center">
             <Sidebar />
 
-            <main className="flex-1 border-r border-x-border max-w-2xl">
+            <main className="flex-1 border-r border-x-border max-w-2xl relative">
+                <PageLoadingAnimation />
                 <div className="sticky top-0 z-10 bg-x-black/80 backdrop-blur-md border-b border-x-border px-4 py-4">
                     <h1 className="text-xl font-bold text-x-text">Ask a Doubt</h1>
                 </div>

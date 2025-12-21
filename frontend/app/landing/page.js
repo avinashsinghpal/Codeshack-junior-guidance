@@ -42,10 +42,10 @@ export default function LandingPage() {
                         </div>
 
                         <Link
-                            href="/signup"
+                            href="/login"
                             className="block w-full py-3 px-6 rounded-full border border-x-border text-x-blue font-semibold text-center hover:bg-x-hover transition-colors"
                         >
-                            Create account
+                            Log in
                         </Link>
                     </div>
 
@@ -54,16 +54,6 @@ export default function LandingPage() {
                         <a href="#" className="text-x-blue hover:underline">Terms of Service</a> and{' '}
                         <a href="#" className="text-x-blue hover:underline">Privacy Policy</a>.
                     </p>
-
-                    <div>
-                        <p className="text-lg font-bold text-x-text mb-4">Already have an account?</p>
-                        <Link
-                            href="/login"
-                            className="block w-full py-3 px-6 rounded-full border border-x-border text-x-blue font-semibold text-center hover:bg-x-blue/10 transition-colors"
-                        >
-                            Sign in
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>
