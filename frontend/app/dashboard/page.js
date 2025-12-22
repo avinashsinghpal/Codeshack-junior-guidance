@@ -1,44 +1,71 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import DoubtCard from '@/components/DoubtCard';
 import PageLoadingAnimation from '@/components/PageLoadingAnimation';
 import { getCurrentUser } from '@/utils/auth';
-import { doubts } from '@/data/mockData';
+import { api } from '@/utils/api';
 
 export default function DashboardPage() {
+    const router = useRouter();
     const [user, setUser] = useState(null);
     const [userDoubts, setUserDoubts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const currentUser = getCurrentUser();
         setUser(currentUser);
 
-        if (currentUser) {
-            if (currentUser.role === 'junior') {
-                // Show user's posted doubts
-                const myDoubts = doubts.filter(d => d.authorName === currentUser.name);
-                setUserDoubts(myDoubts);
-            } else {
-                // Show unanswered doubts for mentors
-                const unanswered = doubts.filter(d => d.status === 'pending');
-                setUserDoubts(unanswered);
-            }
+        if (!currentUser) {
+            router.push('/login');
+        } else {
+            fetchDoubts(currentUser);
         }
-    }, []);
+    }, [router]);
+
+    const fetchDoubts = async (currentUser) => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            if (currentUser.role === 'junior') {
+                // Fetch user's own doubts
+                const response = await api.getDoubts(1, 20);
+                if (response.success) {
+                    // Filter doubts by current user's ID
+                    const myDoubts = response.data.filter(
+                        doubt => doubt.juniorId?._id === currentUser.id ||
+                            doubt.juniorId?.email === currentUser.email
+                    );
+                    setUserDoubts(myDoubts);
+                }
+            } else {
+                // Fetch open/unanswered doubts for mentors
+                const response = await api.getDoubts(1, 20);
+                if (response.success) {
+                    const openDoubts = response.data.filter(
+                        doubt => doubt.status === 'open' || doubt.status === 'answered'
+                    );
+                    setUserDoubts(openDoubts);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching doubts:', err);
+            setError(err.message || 'Failed to load doubts');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-x-black">
-                <div className="text-center">
-                    <p className="text-x-text-secondary mb-4">Please log in to view your dashboard</p>
-                    <Link href="/login" className="text-x-blue hover:underline">
-                        Go to Login
-                    </Link>
-                </div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-x-blue"></div>
             </div>
         );
     }
@@ -76,21 +103,46 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    <div className="bg-x-card rounded-xl border border-x-border overflow-hidden">
-                        {userDoubts.length > 0 ? (
-                            userDoubts.map((doubt) => (
-                                <DoubtCard key={doubt.id} doubt={doubt} />
-                            ))
-                        ) : (
-                            <div className="p-8 text-center">
-                                <p className="text-x-text-secondary">
-                                    {user.role === 'junior'
-                                        ? 'You haven\'t posted any doubts yet. Ask your first question!'
-                                        : 'All doubts have been answered! Great work! 🎉'}
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                    {loading ? (
+                        <div className="p-8 text-center">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-x-blue"></div>
+                            <p className="text-x-text-secondary mt-4">Loading doubts...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="p-8 text-center">
+                            <p className="text-red-500 mb-4">{error}</p>
+                            <button
+                                onClick={() => fetchDoubts(user)}
+                                className="px-4 py-2 bg-x-blue text-white rounded-full hover:bg-x-blue/90 transition-colors"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="bg-x-card rounded-xl border border-x-border overflow-hidden">
+                            {userDoubts.length > 0 ? (
+                                userDoubts.map((doubt) => (
+                                    <DoubtCard key={doubt._id} doubt={doubt} />
+                                ))
+                            ) : (
+                                <div className="p-8 text-center">
+                                    <p className="text-x-text-secondary">
+                                        {user.role === 'junior'
+                                            ? 'You haven\'t posted any doubts yet. Ask your first question!'
+                                            : 'All doubts have been answered! Great work! 🎉'}
+                                    </p>
+                                    {user.role === 'junior' && (
+                                        <Link
+                                            href="/ask"
+                                            className="inline-block mt-4 px-6 py-3 rounded-full bg-x-blue text-white font-semibold hover:bg-x-blue/90 transition-colors"
+                                        >
+                                            Ask Your First Doubt
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </main>
 

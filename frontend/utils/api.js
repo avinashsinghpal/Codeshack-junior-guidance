@@ -116,9 +116,9 @@ export const api = {
     },
 
     createAnswer: async (doubtId, content) => {
-        return apiCall('/answers', {
+        return apiCall(`/answers/${doubtId}`, {
             method: 'POST',
-            body: JSON.stringify({ doubtId, content }),
+            body: JSON.stringify({ content }),
         });
     },
 

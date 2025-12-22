@@ -11,7 +11,9 @@ export default function Sidebar() {
     const router = useRouter();
     const [user, setUser] = useState(null);
     const [showPopup, setShowPopup] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const popupRef = useRef(null);
+    const mobileMenuRef = useRef(null);
 
     useEffect(() => {
         const currentUser = getCurrentUser();
@@ -23,16 +25,19 @@ export default function Sidebar() {
             if (popupRef.current && !popupRef.current.contains(event.target)) {
                 setShowPopup(false);
             }
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+                setShowMobileMenu(false);
+            }
         };
 
-        if (showPopup) {
+        if (showPopup || showMobileMenu) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showPopup]);
+    }, [showPopup, showMobileMenu]);
 
     const handleLogout = () => {
         logout();
@@ -110,65 +115,152 @@ export default function Sidebar() {
         : allNavItems;
 
     return (
-        <aside className="w-64 h-screen sticky top-0 flex flex-col border-r border-x-border p-4">
-            <div className="flex-1">
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-x-blue">CodeShack</h1>
-                </div>
-
-                <nav className="space-y-2">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            href={item.path}
-                            className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${pathname === item.path
-                                ? 'bg-x-blue/10 text-x-blue font-semibold'
-                                : 'text-x-text hover:bg-x-hover'
-                                }`}
-                        >
-                            <span className="flex-shrink-0">{item.icon}</span>
-                            <span className="text-lg">{item.name}</span>
-                        </Link>
-                    ))}
-                </nav>
-            </div>
-
-            {/* Profile Section at Bottom */}
-            {user && (
-                <div className="relative" ref={popupRef}>
-                    {/* Popup Menu */}
-                    {showPopup && (
-                        <div className="absolute bottom-full left-0 mb-2 w-full bg-x-black border border-x-border rounded-xl shadow-2xl overflow-hidden">
-                            <button
-                                onClick={handleLogout}
-                                className="w-full px-4 py-3 text-left text-x-text hover:bg-x-hover transition-colors font-semibold"
-                            >
-                                Log out @{user.name.replace(' ', '').toLowerCase()}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Profile Button */}
+        <>
+            {/* Mobile Header with Hamburger */}
+            <div className="md:hidden fixed top-0 left-0 right-0 bg-x-black/95 backdrop-blur-md border-b border-x-border z-40 px-4 py-3">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-xl font-bold text-x-blue">CodeShack</h1>
                     <button
-                        onClick={() => setShowPopup(!showPopup)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-full hover:bg-x-hover transition-colors"
+                        onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        className="p-2 rounded-lg hover:bg-x-hover transition-colors text-x-text"
+                        aria-label="Toggle menu"
                     >
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-x-blue/20 flex items-center justify-center text-lg font-semibold text-x-text">
-                            {user.name.charAt(0)}
-                        </div>
-
-                        <div className="flex-1 text-left overflow-hidden">
-                            <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-x-text truncate">{user.name}</p>
-                                {user.role === 'mentor' && <MentorBadge />}
-                            </div>
-                            <p className="text-xs text-x-text-secondary truncate">@{user.name.replace(' ', '').toLowerCase()}</p>
-                        </div>
-
-                        <span className="text-x-text">•••</span>
+                        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
+                            {showMobileMenu ? (
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                            ) : (
+                                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                            )}
+                        </svg>
                     </button>
                 </div>
+            </div>
+
+            {/* Mobile Menu Drawer */}
+            <div
+                ref={mobileMenuRef}
+                className={`md:hidden fixed top-0 left-0 h-full w-64 bg-x-black border-r border-x-border z-50 transform transition-transform duration-300 ease-in-out ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+            >
+                <div className="flex flex-col h-full p-4">
+                    <div className="mb-8 mt-2">
+                        <h1 className="text-2xl font-bold text-x-blue">CodeShack</h1>
+                    </div>
+
+                    <nav className="space-y-2 flex-1">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                href={item.path}
+                                onClick={() => setShowMobileMenu(false)}
+                                className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${pathname === item.path
+                                        ? 'bg-x-blue/10 text-x-blue font-semibold'
+                                        : 'text-x-text hover:bg-x-hover'
+                                    }`}
+                            >
+                                <span className="flex-shrink-0">{item.icon}</span>
+                                <span className="text-lg">{item.name}</span>
+                            </Link>
+                        ))}
+                    </nav>
+
+                    {/* Mobile Profile Section */}
+                    {user && (
+                        <div className="mt-auto">
+                            <div className="border-t border-x-border pt-4">
+                                <div className="flex items-center gap-3 px-4 py-3">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-x-blue/20 flex items-center justify-center text-lg font-semibold text-x-text">
+                                        {user.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 overflow-hidden">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-semibold text-x-text truncate">{user.name}</p>
+                                            {user.role === 'mentor' && <MentorBadge />}
+                                        </div>
+                                        <p className="text-xs text-x-text-secondary truncate">@{user.name.replace(' ', '').toLowerCase()}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full px-4 py-3 text-left text-x-text hover:bg-x-hover transition-colors font-semibold rounded-lg"
+                                >
+                                    Log out
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Overlay for mobile menu */}
+            {showMobileMenu && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/50 z-40"
+                    onClick={() => setShowMobileMenu(false)}
+                />
             )}
-        </aside>
+
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex w-64 h-screen sticky top-0 flex-col border-r border-x-border p-4">
+                <div className="flex-1">
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-bold text-x-blue">CodeShack</h1>
+                    </div>
+
+                    <nav className="space-y-2">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                href={item.path}
+                                className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${pathname === item.path
+                                    ? 'bg-x-blue/10 text-x-blue font-semibold'
+                                    : 'text-x-text hover:bg-x-hover'
+                                    }`}
+                            >
+                                <span className="flex-shrink-0">{item.icon}</span>
+                                <span className="text-lg">{item.name}</span>
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+
+                {/* Profile Section at Bottom */}
+                {user && (
+                    <div className="relative" ref={popupRef}>
+                        {/* Popup Menu */}
+                        {showPopup && (
+                            <div className="absolute bottom-full left-0 mb-2 w-full bg-x-black border border-x-border rounded-xl shadow-2xl overflow-hidden">
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full px-4 py-3 text-left text-x-text hover:bg-x-hover transition-colors font-semibold"
+                                >
+                                    Log out @{user.name.replace(' ', '').toLowerCase()}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Profile Button */}
+                        <button
+                            onClick={() => setShowPopup(!showPopup)}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-full hover:bg-x-hover transition-colors"
+                        >
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-x-blue/20 flex items-center justify-center text-lg font-semibold text-x-text">
+                                {user.name.charAt(0)}
+                            </div>
+
+                            <div className="flex-1 text-left overflow-hidden">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-x-text truncate">{user.name}</p>
+                                    {user.role === 'mentor' && <MentorBadge />}
+                                </div>
+                                <p className="text-xs text-x-text-secondary truncate">@{user.name.replace(' ', '').toLowerCase()}</p>
+                            </div>
+
+                            <span className="text-x-text">•••</span>
+                        </button>
+                    </div>
+                )}
+            </aside>
+        </>
     );
 }
