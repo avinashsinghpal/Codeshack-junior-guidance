@@ -19,6 +19,11 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
     const [answerReplies, setAnswerReplies] = useState([]);
     const [loadingReplies, setLoadingReplies] = useState(true);
 
+    // Upvote state
+    const [isUpvoted, setIsUpvoted] = useState(false);
+    const [upvoteCount, setUpvoteCount] = useState(answer.upvoteCount || 0);
+    const [isUpvoting, setIsUpvoting] = useState(false);
+
     const mentorName = answer.mentorId?.name || 'Anonymous Mentor';
     const mentorId = answer.mentorId?._id || answer.mentorId;
     // Fix: Check both possible ID structures
@@ -30,7 +35,21 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
     // Fetch replies for this specific answer
     useEffect(() => {
         fetchAnswerReplies();
+        checkUpvoteStatus();
     }, [answer._id]);
+
+    const checkUpvoteStatus = async () => {
+        if (!currentUserId) return;
+
+        try {
+            const response = await api.checkIfUpvoted(answer._id, currentUserId);
+            if (response.success) {
+                setIsUpvoted(response.data.isUpvoted);
+            }
+        } catch (err) {
+            console.error('Error checking upvote status:', err);
+        }
+    };
 
     const fetchAnswerReplies = async () => {
         try {
@@ -43,6 +62,40 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
             console.error('Error fetching answer replies:', err);
         } finally {
             setLoadingReplies(false);
+        }
+    };
+
+    const handleUpvoteToggle = async () => {
+        if (isUpvoting) return;
+
+        // Optimistic update
+        const previousUpvoted = isUpvoted;
+        const previousCount = upvoteCount;
+
+        setIsUpvoted(!isUpvoted);
+        setUpvoteCount(isUpvoted ? upvoteCount - 1 : upvoteCount + 1);
+        setIsUpvoting(true);
+
+        try {
+            const response = isUpvoted
+                ? await api.removeUpvote(answer._id)
+                : await api.upvoteAnswer(answer._id);
+
+            if (response.success) {
+                // Update with actual count from server
+                setUpvoteCount(response.data.upvoteCount);
+            } else {
+                // Revert on failure
+                setIsUpvoted(previousUpvoted);
+                setUpvoteCount(previousCount);
+            }
+        } catch (err) {
+            console.error('Error toggling upvote:', err);
+            // Revert on error
+            setIsUpvoted(previousUpvoted);
+            setUpvoteCount(previousCount);
+        } finally {
+            setIsUpvoting(false);
         }
     };
 
@@ -96,9 +149,16 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
                     <p className="text-x-text text-base mb-3 whitespace-pre-wrap">{answer.content}</p>
 
                     <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-1 text-x-text-secondary hover:text-x-success transition-colors">
-                            <span>↑</span>
-                            <span>{answer.upvoteCount || 0}</span>
+                        <button
+                            onClick={handleUpvoteToggle}
+                            disabled={isUpvoting}
+                            className={`flex items-center gap-1 transition-all ${isUpvoted
+                                    ? 'text-x-success hover:text-x-success/80'
+                                    : 'text-x-text-secondary hover:text-x-success'
+                                } ${isUpvoting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                            <span className={`text-xl ${isUpvoted ? 'scale-110' : ''}`}>↑</span>
+                            <span className="font-semibold">{upvoteCount}</span>
                         </button>
 
                         {isDoubtPoster && (

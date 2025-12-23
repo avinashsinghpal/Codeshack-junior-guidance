@@ -189,6 +189,23 @@ export const api = {
         });
     },
 
+    // Upvotes
+    upvoteAnswer: async (answerId) => {
+        return apiCall(`/upvotes/${answerId}`, {
+            method: 'POST',
+        });
+    },
+
+    removeUpvote: async (answerId) => {
+        return apiCall(`/upvotes/${answerId}`, {
+            method: 'DELETE',
+        });
+    },
+
+    checkIfUpvoted: async (answerId, userId) => {
+        return apiCall(`/upvotes/${answerId}/check/${userId}`);
+    },
+
     // Junior Space Posts
     getJuniorSpacePosts: async (page = 1, limit = 10) => {
         return apiCall(`/junior-space-posts?page=${page}&limit=${limit}`);
