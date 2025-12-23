@@ -98,11 +98,19 @@ export default function HomePage() {
 
         try {
             setIsPosting(true);
+            console.log('Posting doubt with:', {
+                title: postTitle.trim(),
+                description: postContent.trim(),
+                tags: selectedTags
+            });
+
             const response = await api.createDoubt(
                 postTitle.trim(),
                 postContent.trim(),
                 selectedTags
             );
+
+            console.log('Doubt post response:', response);
 
             if (response.success) {
                 // Clear form
@@ -113,13 +121,20 @@ export default function HomePage() {
 
                 // Refresh doubts feed
                 await fetchDoubts();
-
-                // Show success message (optional)
-                console.log('Doubt posted successfully!');
+            } else {
+                setPostError(response.message || 'Failed to post doubt');
             }
         } catch (err) {
             console.error('Error posting doubt:', err);
-            setPostError(err.message || 'Failed to post doubt. Please try again.');
+            const errorMessage = err.message || 'Failed to post doubt. Please try again.';
+            setPostError(errorMessage);
+
+            // Show detailed error in console for debugging
+            console.error('Full error details:', {
+                error: err,
+                message: err.message,
+                stack: err.stack
+            });
         } finally {
             setIsPosting(false);
         }

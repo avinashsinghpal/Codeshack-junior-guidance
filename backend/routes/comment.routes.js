@@ -32,5 +32,6 @@ router.get("/:commentId/replies", authenticate, commentController.getReplies);
 
 // Filter operations
 router.get("/user/:userId", authenticate, commentController.getCommentsByUser);
+router.get("/answer/:answerId", authenticate, commentController.getCommentsByAnswer);
 
 export default router;

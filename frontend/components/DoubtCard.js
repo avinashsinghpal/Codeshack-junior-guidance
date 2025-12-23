@@ -5,7 +5,7 @@ export default function DoubtCard({ doubt }) {
     // Handle backend data structure
     const doubtId = doubt._id || doubt.id;
     const authorName = doubt.juniorId?.name || 'Anonymous';
-    const answerCount = doubt.answers?.length || 0;
+    const commentCount = doubt.commentCount || 0;
 
     return (
         <Link href={`/doubts/${doubtId}`}>
@@ -37,7 +37,7 @@ export default function DoubtCard({ doubt }) {
 
                         <div className="flex items-center gap-3 md:gap-4 text-x-text-secondary text-xs md:text-sm">
                             <span className="flex items-center gap-1">
-                                💬 {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
+                                💬 {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
                             </span>
                             {doubt.status === 'answered' && (
                                 <span className="text-x-success">✓ Answered</span>

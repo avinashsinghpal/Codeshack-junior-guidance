@@ -62,7 +62,11 @@ export const getDoubtById = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Get comment count
+    const commentCount = await Comment.countDocuments({ doubtId });
+
     doubt.answers = answers;
+    doubt.commentCount = commentCount;
 
     res.status(200).json({
       success: true,
@@ -95,6 +99,12 @@ export const getAllDoubts = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
+
+    // Add comment count to each doubt
+    for (let doubt of doubts) {
+      const commentCount = await Comment.countDocuments({ doubtId: doubt._id });
+      doubt.commentCount = commentCount;
+    }
 
     const total = await Doubt.countDocuments(filter);
 

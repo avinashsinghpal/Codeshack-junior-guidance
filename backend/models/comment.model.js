@@ -22,6 +22,11 @@ const commentSchema = new mongoose.Schema({
         ref: "Doubt",
         required: true,
     },
+    answerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Answer",
+        default: null,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -29,8 +34,9 @@ const commentSchema = new mongoose.Schema({
 });
 
 // Indexes
-commentSchema.index({doubtId: 1});
-commentSchema.index({userId: 1});
-commentSchema.index({parentCommentId: 1});
+commentSchema.index({ doubtId: 1 });
+commentSchema.index({ userId: 1 });
+commentSchema.index({ parentCommentId: 1 });
+commentSchema.index({ answerId: 1 });
 
 export default mongoose.model("Comment", commentSchema);

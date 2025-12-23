@@ -6,8 +6,192 @@ import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import MentorBadge from '@/components/MentorBadge';
 import Tag from '@/components/Tag';
+import CommentSection from '@/components/CommentSection';
 import { getCurrentUser, isMentor, isJunior } from '@/utils/auth';
 import { api } from '@/utils/api';
+
+// Separate component for Answer Item to avoid hooks in map
+function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
+    const [showReplyForm, setShowReplyForm] = useState(false);
+    const [replyContent, setReplyContent] = useState('');
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+    const [replyError, setReplyError] = useState(null);
+    const [answerReplies, setAnswerReplies] = useState([]);
+    const [loadingReplies, setLoadingReplies] = useState(true);
+
+    const mentorName = answer.mentorId?.name || 'Anonymous Mentor';
+    const mentorId = answer.mentorId?._id || answer.mentorId;
+    // Fix: Check both possible ID structures
+    const doubtPosterId = doubt?.juniorId?._id || doubt?.juniorId;
+    const currentUserId = user?.id || user?.userId || user?._id;
+    const isDoubtPoster = currentUserId === doubtPosterId;
+    const isMentorOfAnswer = currentUserId === mentorId;
+
+    // Fetch replies for this specific answer
+    useEffect(() => {
+        fetchAnswerReplies();
+    }, [answer._id]);
+
+    const fetchAnswerReplies = async () => {
+        try {
+            setLoadingReplies(true);
+            const response = await api.getCommentsByAnswer(answer._id);
+            if (response.success) {
+                setAnswerReplies(response.data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching answer replies:', err);
+        } finally {
+            setLoadingReplies(false);
+        }
+    };
+
+    const handleReplyToMentor = async (e) => {
+        e.preventDefault();
+        setReplyError(null);
+
+        if (!replyContent.trim()) {
+            setReplyError('Please enter your reply');
+            return;
+        }
+
+        try {
+            setIsSubmittingReply(true);
+            const response = await api.createAnswerReply(
+                doubtId,
+                answer._id,
+                replyContent.trim()
+            );
+
+            if (response.success) {
+                setReplyContent('');
+                setShowReplyForm(false);
+                // Refresh answer replies
+                await fetchAnswerReplies();
+            }
+        } catch (err) {
+            console.error('Error posting reply:', err);
+            setReplyError(err.message || 'Failed to post reply');
+        } finally {
+            setIsSubmittingReply(false);
+        }
+    };
+
+    return (
+        <div className="p-4 border-b border-x-border bg-x-card/30">
+            <div className="flex gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-x-blue/20 flex items-center justify-center text-lg">
+                    {mentorName.charAt(0).toUpperCase()}
+                </div>
+
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-x-text">{mentorName}</span>
+                        <MentorBadge />
+                        <span className="text-x-text-secondary text-sm">
+                            · {new Date(answer.createdAt).toLocaleDateString()}
+                        </span>
+                    </div>
+
+                    <p className="text-x-text text-base mb-3 whitespace-pre-wrap">{answer.content}</p>
+
+                    <div className="flex items-center gap-4">
+                        <button className="flex items-center gap-1 text-x-text-secondary hover:text-x-success transition-colors">
+                            <span>↑</span>
+                            <span>{answer.upvoteCount || 0}</span>
+                        </button>
+
+                        {isDoubtPoster && (
+                            <button
+                                onClick={() => setShowReplyForm(!showReplyForm)}
+                                className="text-sm text-x-blue hover:text-x-blue/80 transition-colors"
+                            >
+                                {showReplyForm ? 'Cancel' : 'Reply to Mentor'}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Reply Form - Only for Doubt Poster */}
+                    {isDoubtPoster && showReplyForm && (
+                        <div className="mt-4 p-3 border border-x-border rounded-lg bg-x-black/50">
+                            <form onSubmit={handleReplyToMentor}>
+                                <textarea
+                                    value={replyContent}
+                                    onChange={(e) => setReplyContent(e.target.value)}
+                                    placeholder="Reply to the mentor's answer..."
+                                    rows={3}
+                                    maxLength={2000}
+                                    className="w-full bg-transparent text-x-text placeholder-x-text-secondary focus:outline-none resize-none border border-x-border rounded-lg p-2"
+                                />
+
+                                {replyError && (
+                                    <div className="mt-2 p-2 bg-red-500/10 border border-red-500/30 rounded-lg">
+                                        <p className="text-red-500 text-sm">{replyError}</p>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between mt-2">
+                                    <span className="text-xs text-x-text-secondary">
+                                        {replyContent.length}/2000
+                                    </span>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingReply || !replyContent.trim()}
+                                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${isSubmittingReply || !replyContent.trim()
+                                            ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                            : 'bg-x-blue text-white hover:bg-x-blue/90'
+                                            }`}
+                                    >
+                                        {isSubmittingReply ? 'Posting...' : 'Post Reply'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Reply Thread - Separate from general discussion */}
+                    {answerReplies.length > 0 && (
+                        <div className="mt-4 ml-0 border-l-2 border-x-blue/30 pl-4">
+                            <p className="text-xs font-semibold text-x-text-secondary mb-3 uppercase">
+                                Reply Thread ({answerReplies.length})
+                            </p>
+                            {answerReplies.map((reply) => {
+                                const replyAuthorName = reply.userId?.name || 'Anonymous';
+                                const isReplyFromMentor = (reply.userId?._id || reply.userId) === mentorId;
+                                const isReplyFromPoster = (reply.userId?._id || reply.userId) === doubtPosterId;
+
+                                return (
+                                    <div key={reply._id} className="mb-3 p-3 bg-x-black/30 rounded-lg border border-x-border/50">
+                                        <div className="flex gap-2">
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-x-blue/20 flex items-center justify-center text-sm">
+                                                {replyAuthorName.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="font-semibold text-x-text text-sm">{replyAuthorName}</span>
+                                                    {isReplyFromMentor && <MentorBadge />}
+                                                    {isReplyFromPoster && (
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                                                            Doubt Poster
+                                                        </span>
+                                                    )}
+                                                    <span className="text-x-text-secondary text-xs">
+                                                        · {new Date(reply.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-x-text text-sm whitespace-pre-wrap">{reply.content}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function DoubtDetailPage({ params }) {
     const router = useRouter();
@@ -149,8 +333,8 @@ export default function DoubtDetailPage({ params }) {
                                 </span>
                                 {doubt.status && (
                                     <span className={`text-xs px-2 py-1 rounded-full ${doubt.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
-                                            doubt.status === 'answered' ? 'bg-blue-500/20 text-blue-400' :
-                                                'bg-orange-500/20 text-orange-400'
+                                        doubt.status === 'answered' ? 'bg-blue-500/20 text-blue-400' :
+                                            'bg-orange-500/20 text-orange-400'
                                         }`}>
                                         {doubt.status}
                                     </span>
@@ -184,37 +368,16 @@ export default function DoubtDetailPage({ params }) {
                         </div>
                     )}
 
-                    {answers.map((answer) => {
-                        const mentorName = answer.mentorId?.name || 'Anonymous Mentor';
-                        return (
-                            <div key={answer._id} className="p-4 border-b border-x-border bg-x-card/30">
-                                <div className="flex gap-3">
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-x-blue/20 flex items-center justify-center text-lg">
-                                        {mentorName.charAt(0).toUpperCase()}
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="font-semibold text-x-text">{mentorName}</span>
-                                            <MentorBadge />
-                                            <span className="text-x-text-secondary text-sm">
-                                                · {new Date(answer.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-
-                                        <p className="text-x-text text-base mb-3 whitespace-pre-wrap">{answer.content}</p>
-
-                                        <div className="flex items-center gap-4">
-                                            <button className="flex items-center gap-1 text-x-text-secondary hover:text-x-success transition-colors">
-                                                <span>↑</span>
-                                                <span>{answer.upvoteCount || 0}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {answers.map((answer) => (
+                        <AnswerItem
+                            key={answer._id}
+                            answer={answer}
+                            doubt={doubt}
+                            user={user}
+                            doubtId={doubtId}
+                            onRefresh={fetchDoubtDetails}
+                        />
+                    ))}
 
                     {/* Answer Form - Only for Mentors */}
                     {isMentor() && (
@@ -249,8 +412,8 @@ export default function DoubtDetailPage({ params }) {
                                                 type="submit"
                                                 disabled={isSubmitting || !answerContent.trim()}
                                                 className={`px-6 py-2 rounded-full font-semibold transition-colors ${isSubmitting || !answerContent.trim()
-                                                        ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
-                                                        : 'bg-x-blue text-white hover:bg-x-blue/90'
+                                                    ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                                    : 'bg-x-blue text-white hover:bg-x-blue/90'
                                                     }`}
                                             >
                                                 {isSubmitting ? 'Posting...' : 'Post Answer'}
@@ -262,6 +425,9 @@ export default function DoubtDetailPage({ params }) {
                         </div>
                     )}
                 </div>
+
+                {/* Comments Section */}
+                <CommentSection doubtId={doubtId} doubt={doubt} />
             </main>
 
             <RightSidebar />

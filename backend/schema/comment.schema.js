@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "zod";
 
 // Create Comment Schema
 const createCommentSchema = z.object({
@@ -7,6 +7,10 @@ const createCommentSchema = z.object({
         .string()
         .regex(/^[0-9a-fA-F]{24}$/, "Invalid parent comment ID")
         .optional(),
+    answerId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, "Invalid answer ID")
+        .optional(),
 });
 
 // Update Comment Schema
@@ -14,4 +18,4 @@ const updateCommentSchema = z.object({
     content: z.string().min(1, "Comment cannot be empty").max(2000),
 });
 
-export {createCommentSchema, updateCommentSchema};
+export { createCommentSchema, updateCommentSchema };

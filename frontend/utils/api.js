@@ -140,11 +140,26 @@ export const api = {
         return apiCall(`/comments/doubt/${doubtId}`);
     },
 
-    createComment: async (doubtId, content) => {
-        return apiCall('/comments', {
+    createComment: async (doubtId, content, answerId = null) => {
+        const body = { content };
+        if (answerId) {
+            body.answerId = answerId;
+        }
+        return apiCall(`/comments/${doubtId}`, {
             method: 'POST',
-            body: JSON.stringify({ doubtId, content }),
+            body: JSON.stringify(body),
         });
+    },
+
+    createAnswerReply: async (doubtId, answerId, content) => {
+        return apiCall(`/comments/${doubtId}`, {
+            method: 'POST',
+            body: JSON.stringify({ content, answerId }),
+        });
+    },
+
+    getCommentsByAnswer: async (answerId) => {
+        return apiCall(`/comments/answer/${answerId}`);
     },
 
     updateComment: async (commentId, content) => {

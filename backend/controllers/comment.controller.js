@@ -7,7 +7,7 @@ export const createComment = async (req, res) => {
     try {
         const { doubtId } = req.params;
         const { userId } = req.user;
-        const { content, parentCommentId } = req.body;
+        const { content, parentCommentId, answerId } = req.body;
 
         const doubt = await Doubt.findById(doubtId);
         if (!doubt) {
@@ -27,6 +27,38 @@ export const createComment = async (req, res) => {
             });
         }
 
+        // If answerId is provided, verify authorization
+        if (answerId) {
+            const Answer = (await import('../models/answer.model.js')).default;
+            const answer = await Answer.findById(answerId);
+
+            if (!answer) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Answer not found",
+                    code: "ANSWER_NOT_FOUND",
+                });
+            }
+
+            // Verify the answer belongs to the doubt
+            if (answer.doubtId.toString() !== doubtId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Answer does not belong to this doubt",
+                    code: "INVALID_ANSWER",
+                });
+            }
+
+            // Only the original doubt poster can reply to answers
+            if (doubt.juniorId.toString() !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Only the doubt poster can reply to mentor answers",
+                    code: "FORBIDDEN",
+                });
+            }
+        }
+
         if (parentCommentId) {
             const parentComment = await Comment.findById(parentCommentId);
             if (!parentComment) {
@@ -43,6 +75,7 @@ export const createComment = async (req, res) => {
             doubtId,
             userId,
             parentCommentId: parentCommentId || null,
+            answerId: answerId || null,
         });
 
         await comment.save();
@@ -337,6 +370,51 @@ export const getCommentsByUser = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error fetching user comments",
+            error: error.message,
+        });
+    }
+};
+
+export const getCommentsByAnswer = async (req, res) => {
+    try {
+        const { answerId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const Answer = (await import('../models/answer.model.js')).default;
+        const answer = await Answer.findById(answerId);
+
+        if (!answer) {
+            return res.status(404).json({
+                success: false,
+                message: "Answer not found",
+                code: "ANSWER_NOT_FOUND",
+            });
+        }
+
+        const comments = await Comment.find({ answerId })
+            .populate("userId", "name email")
+            .sort({ createdAt: 1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean();
+
+        const total = await Comment.countDocuments({ answerId });
+
+        res.status(200).json({
+            success: true,
+            data: comments,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / parseInt(limit)),
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching answer comments",
             error: error.message,
         });
     }
