@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getCurrentUser, logout, isMentor } from '@/utils/auth';
 import MentorBadge from './MentorBadge';
+import VerifiedBadge from './VerifiedBadge';
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -154,8 +155,8 @@ export default function Sidebar() {
                                 href={item.path}
                                 onClick={() => setShowMobileMenu(false)}
                                 className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${pathname === item.path
-                                        ? 'bg-x-blue/10 text-x-blue font-semibold'
-                                        : 'text-x-text hover:bg-x-hover'
+                                    ? 'bg-x-blue/10 text-x-blue font-semibold'
+                                    : 'text-x-text hover:bg-x-hover'
                                     }`}
                             >
                                 <span className="flex-shrink-0">{item.icon}</span>

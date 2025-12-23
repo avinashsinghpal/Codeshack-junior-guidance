@@ -30,6 +30,9 @@ router.patch(
 );
 router.delete("/:userId", authenticate, userController.deleteUser);
 
+// User stats
+router.get("/:userId/stats", authenticate, userController.getUserStats);
+
 // Change password
 router.post("/:userId/change-password", authenticate, userController.changePassword);
 

@@ -81,6 +81,10 @@ export const api = {
         return apiCall(`/users/mentors/approved?page=${page}&limit=${limit}`);
     },
 
+    getUserStats: async (userId) => {
+        return apiCall(`/users/${userId}/stats`);
+    },
+
     // Doubts
     getDoubts: async (page = 1, limit = 10) => {
         return apiCall(`/doubts?page=${page}&limit=${limit}`);

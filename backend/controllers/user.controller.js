@@ -1,13 +1,16 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import Doubt from "../models/doubt.model.js";
+import Answer from "../models/answer.model.js";
+import MentorProfile from "../models/mentorProfile.model.js";
 
 const SALT_ROUNDS = 10;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || "7d";
 
 export const register = async (req, res) => {
     try {
-        const {name, email, password, role = "junior", bio = ""} = req.body;
+        const { name, email, password, role = "junior", bio = "" } = req.body;
 
         // Validate role
         if (!["junior", "mentor"].includes(role)) {
@@ -18,7 +21,7 @@ export const register = async (req, res) => {
             });
         }
 
-        const existingUser = await User.findOne({email});
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(409).json({
                 success: false,
@@ -41,9 +44,9 @@ export const register = async (req, res) => {
         await user.save();
 
         const token = jwt.sign(
-            {userId: user._id, email: user.email, role: user.role},
+            { userId: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
-            {expiresIn: JWT_EXPIRY}
+            { expiresIn: JWT_EXPIRY }
         );
 
         res.status(201).json({
@@ -77,9 +80,9 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const {email, password} = req.body;
+        const { email, password } = req.body;
 
-        const user = await User.findOne({email});
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -101,9 +104,9 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            {userId: user._id, email: user.email, role: user.role},
+            { userId: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
-            {expiresIn: JWT_EXPIRY}
+            { expiresIn: JWT_EXPIRY }
         );
 
         res.status(200).json({
@@ -129,7 +132,7 @@ export const login = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
     try {
-        const {userId} = req.params;
+        const { userId } = req.params;
 
         const user = await User.findById(userId).select("-passwordHash");
         if (!user) {
@@ -155,8 +158,8 @@ export const getUserProfile = async (req, res) => {
 
 export const updateUserProfile = async (req, res) => {
     try {
-        const {userId} = req.params;
-        const {name, bio} = req.body;
+        const { userId } = req.params;
+        const { name, bio } = req.body;
 
         const updateData = {};
         if (name) updateData.name = name;
@@ -191,7 +194,7 @@ export const updateUserProfile = async (req, res) => {
 
 export const getAllMentors = async (req, res) => {
     try {
-        const {page = 1, limit = 10, sortBy = "createdAt"} = req.query;
+        const { page = 1, limit = 10, sortBy = "createdAt" } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const mentors = await User.find({
@@ -199,7 +202,7 @@ export const getAllMentors = async (req, res) => {
             isMentorApproved: true,
         })
             .select("-passwordHash")
-            .sort({[sortBy]: -1})
+            .sort({ [sortBy]: -1 })
             .skip(skip)
             .limit(parseInt(limit));
 
@@ -229,8 +232,8 @@ export const getAllMentors = async (req, res) => {
 
 export const getUsersByRole = async (req, res) => {
     try {
-        const {role} = req.params;
-        const {page = 1, limit = 10} = req.query;
+        const { role } = req.params;
+        const { page = 1, limit = 10 } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const validRoles = ["junior", "mentor", "admin"];
@@ -242,13 +245,13 @@ export const getUsersByRole = async (req, res) => {
             });
         }
 
-        const users = await User.find({role})
+        const users = await User.find({ role })
             .select("-passwordHash")
             .skip(skip)
             .limit(parseInt(limit))
-            .sort({createdAt: -1});
+            .sort({ createdAt: -1 });
 
-        const total = await User.countDocuments({role});
+        const total = await User.countDocuments({ role });
 
         res.status(200).json({
             success: true,
@@ -271,7 +274,7 @@ export const getUsersByRole = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
     try {
-        const {userId} = req.params;
+        const { userId } = req.params;
 
         const user = await User.findByIdAndDelete(userId);
         if (!user) {
@@ -285,7 +288,7 @@ export const deleteUser = async (req, res) => {
         res.status(200).json({
             success: true,
             message: "User deleted successfully",
-            data: {userId: user._id},
+            data: { userId: user._id },
         });
     } catch (error) {
         res.status(500).json({
@@ -298,8 +301,8 @@ export const deleteUser = async (req, res) => {
 
 export const changePassword = async (req, res) => {
     try {
-        const {userId} = req.params;
-        const {currentPassword, newPassword} = req.body;
+        const { userId } = req.params;
+        const { currentPassword, newPassword } = req.body;
 
         const user = await User.findById(userId);
         if (!user) {
@@ -334,6 +337,78 @@ export const changePassword = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error changing password",
+            error: error.message,
+        });
+    }
+};
+
+export const getUserStats = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+                code: "USER_NOT_FOUND",
+            });
+        }
+
+        if (user.role === "junior") {
+            // Get stats for juniors
+            const doubtsAsked = await Doubt.countDocuments({ juniorId: userId });
+            const doubtsSolved = await Doubt.countDocuments({
+                juniorId: userId,
+                status: { $in: ["resolved", "closed"] },
+            });
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    doubtsAsked,
+                    doubtsSolved,
+                },
+            });
+        }
+
+        if (user.role === "mentor") {
+            // Get stats for mentors
+            const mentorProfile = await MentorProfile.findOne({ userId });
+            const answersGiven = await Answer.countDocuments({ mentorId: userId });
+            const upvotesReceived = mentorProfile?.totalUpvotes || 0;
+
+            // Check both User.isMentorApproved and MentorProfile.approvedByAdmin
+            const isVerified = user.isMentorApproved || mentorProfile?.approvedByAdmin || false;
+
+            // Debug logging
+            console.log('Mentor Stats Debug:', {
+                userId,
+                userIsMentorApproved: user.isMentorApproved,
+                hasMentorProfile: !!mentorProfile,
+                mentorProfileApproved: mentorProfile?.approvedByAdmin,
+                finalIsVerified: isVerified
+            });
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    answersGiven,
+                    upvotesReceived,
+                    isVerified,
+                },
+            });
+        }
+
+        // Default response for other roles
+        return res.status(200).json({
+            success: true,
+            data: {},
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching user stats",
             error: error.message,
         });
     }

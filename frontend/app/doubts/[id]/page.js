@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import MentorBadge from '@/components/MentorBadge';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import Tag from '@/components/Tag';
 import CommentSection from '@/components/CommentSection';
 import { getCurrentUser, isMentor, isJunior } from '@/utils/auth';
@@ -141,6 +142,7 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-semibold text-x-text">{mentorName}</span>
                         <MentorBadge />
+                        <VerifiedBadge />
                         <span className="text-x-text-secondary text-sm">
                             · {new Date(answer.createdAt).toLocaleDateString()}
                         </span>
@@ -153,8 +155,8 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
                             onClick={handleUpvoteToggle}
                             disabled={isUpvoting}
                             className={`flex items-center gap-1 transition-all ${isUpvoted
-                                    ? 'text-x-success hover:text-x-success/80'
-                                    : 'text-x-text-secondary hover:text-x-success'
+                                ? 'text-x-success hover:text-x-success/80'
+                                : 'text-x-text-secondary hover:text-x-success'
                                 } ${isUpvoting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         >
                             <span className={`text-xl ${isUpvoted ? 'scale-110' : ''}`}>↑</span>
@@ -230,6 +232,7 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-semibold text-x-text text-sm">{replyAuthorName}</span>
                                                     {isReplyFromMentor && <MentorBadge />}
+                                                    {isReplyFromMentor && <VerifiedBadge />}
                                                     {isReplyFromPoster && (
                                                         <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
                                                             Doubt Poster

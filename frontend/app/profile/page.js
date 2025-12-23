@@ -5,36 +5,40 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import RightSidebar from '@/components/RightSidebar';
 import MentorBadge from '@/components/MentorBadge';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import PageLoadingAnimation from '@/components/PageLoadingAnimation';
 import { getCurrentUser, logout } from '@/utils/auth';
-import { doubts, answers } from '@/data/mockData';
+import { api } from '@/utils/api';
 
 export default function ProfilePage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
-    const [stats, setStats] = useState({
-        doubtsAsked: 0,
-        answersGiven: 0,
-        upvotesReceived: 0,
-    });
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const currentUser = getCurrentUser();
         setUser(currentUser);
 
         if (currentUser) {
-            // Calculate stats
-            const userDoubts = doubts.filter(d => d.authorName === currentUser.name);
-            const userAnswers = answers.filter(a => a.authorName === currentUser.name);
-            const totalUpvotes = userAnswers.reduce((sum, a) => sum + a.upvotes, 0);
-
-            setStats({
-                doubtsAsked: userDoubts.length,
-                answersGiven: userAnswers.length,
-                upvotesReceived: totalUpvotes,
-            });
+            fetchUserStats(currentUser.id);
+        } else {
+            setLoading(false);
         }
     }, []);
+
+    const fetchUserStats = async (userId) => {
+        try {
+            const response = await api.getUserStats(userId);
+            if (response.success) {
+                setStats(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching user stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -74,6 +78,16 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-2 mb-2">
                                     <h2 className="text-2xl font-bold text-x-text">{user.name}</h2>
                                     {user.role === 'mentor' && <MentorBadge />}
+                                    {/* Debug: Show badge for all mentors to test, remove condition later */}
+                                    {user.role === 'mentor' && (
+                                        <>
+                                            <VerifiedBadge />
+                                            {/* Debug info */}
+                                            <span className="text-xs text-x-text-secondary ml-2">
+                                                (Verified: {stats?.isVerified ? 'Yes' : 'No'})
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                                 <p className="text-x-text-secondary">{user.email}</p>
                                 <p className="text-x-blue capitalize mt-1">{user.role}</p>
@@ -90,22 +104,41 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
-                            <div className="text-3xl font-bold text-x-blue mb-2">{stats.doubtsAsked}</div>
-                            <div className="text-sm text-x-text-secondary">Doubts Asked</div>
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-x-blue"></div>
                         </div>
+                    ) : stats && (
+                        <div className="grid grid-cols-2 gap-4">
+                            {user.role === 'junior' && (
+                                <>
+                                    <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
+                                        <div className="text-3xl font-bold text-x-blue mb-2">{stats.doubtsAsked || 0}</div>
+                                        <div className="text-sm text-x-text-secondary">Doubts Asked</div>
+                                    </div>
 
-                        <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
-                            <div className="text-3xl font-bold text-x-success mb-2">{stats.answersGiven}</div>
-                            <div className="text-sm text-x-text-secondary">Answers Given</div>
-                        </div>
+                                    <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
+                                        <div className="text-3xl font-bold text-x-success mb-2">{stats.doubtsSolved || 0}</div>
+                                        <div className="text-sm text-x-text-secondary">Doubts Solved</div>
+                                    </div>
+                                </>
+                            )}
 
-                        <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
-                            <div className="text-3xl font-bold text-x-text mb-2">{stats.upvotesReceived}</div>
-                            <div className="text-sm text-x-text-secondary">Upvotes Received</div>
+                            {user.role === 'mentor' && (
+                                <>
+                                    <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
+                                        <div className="text-3xl font-bold text-x-blue mb-2">{stats.answersGiven || 0}</div>
+                                        <div className="text-sm text-x-text-secondary">Doubts Answered</div>
+                                    </div>
+
+                                    <div className="bg-x-card rounded-xl p-6 border border-x-border text-center">
+                                        <div className="text-3xl font-bold text-x-success mb-2">{stats.upvotesReceived || 0}</div>
+                                        <div className="text-sm text-x-text-secondary">Upvotes Received</div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                    </div>
+                    )}
 
                     {/* Activity Section */}
                     <div className="mt-6 bg-x-card rounded-xl p-6 border border-x-border">
