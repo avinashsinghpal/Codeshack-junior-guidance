@@ -1,8 +1,8 @@
 import express from "express";
 import * as adminController from "../controllers/admin.controller.js";
-import {authenticate, requireRole} from "../middleware/auth.middleware.js";
+import { authenticate, requireRole } from "../middleware/auth.middleware.js";
 import validate from "../middleware/validate.middleware.js";
-import {registerAdminSchema} from "../schema/user.schema.js";
+import { registerAdminSchema } from "../schema/user.schema.js";
 
 const router = express.Router();
 
@@ -73,6 +73,12 @@ router.get(
     authenticate,
     requireRole("admin"),
     adminController.getAdminStats
+);
+router.get(
+    "/unverified-mentors",
+    authenticate,
+    requireRole("admin"),
+    adminController.getUnverifiedMentors
 );
 
 export default router;

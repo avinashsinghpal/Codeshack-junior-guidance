@@ -32,6 +32,13 @@ export default function LandingPage() {
                             Sign up as Junior
                         </Link>
 
+                        <Link
+                            href="/signup?role=admin"
+                            className="block w-full py-3 px-6 rounded-full border border-red-500/50 text-red-400 font-semibold text-center hover:bg-red-500/10 transition-colors tap-target"
+                        >
+                            Sign up as Admin
+                        </Link>
+
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-x-border"></div>

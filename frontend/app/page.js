@@ -152,14 +152,14 @@ export default function HomePage() {
                     <div className="sticky top-0 md:top-0 mt-14 md:mt-0 z-10 bg-x-black/80 backdrop-blur-md border-b border-x-border">
                         <div className="flex items-center justify-between px-4 py-3">
                             <h1 className="text-xl font-bold text-x-text">
-                                {user?.role === 'mentor' ? 'Share Your Knowledge' : 'Home'}
+                                {(user?.role === 'mentor' || user?.role === 'admin') ? 'Share Your Knowledge' : 'Home'}
                             </h1>
                         </div>
                     </div>
 
                     {/* Post Composer - Role Based */}
                     <div className="border-b border-x-border p-3 md:p-4">
-                        {user?.role === 'mentor' ? (
+                        {(user?.role === 'mentor' || user?.role === 'admin') ? (
                             <MentorBlogForm user={user} availableTags={availableTags} />
                         ) : (
                             <form onSubmit={handlePost}>

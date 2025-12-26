@@ -78,15 +78,13 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-2 mb-2">
                                     <h2 className="text-2xl font-bold text-x-text">{user.name}</h2>
                                     {user.role === 'mentor' && <MentorBadge />}
-                                    {/* Debug: Show badge for all mentors to test, remove condition later */}
-                                    {user.role === 'mentor' && (
-                                        <>
-                                            <VerifiedBadge />
-                                            {/* Debug info */}
-                                            <span className="text-xs text-x-text-secondary ml-2">
-                                                (Verified: {stats?.isVerified ? 'Yes' : 'No'})
-                                            </span>
-                                        </>
+                                    {user.role === 'mentor' && (user.isMentorApproved || stats?.isVerified) && (
+                                        <VerifiedBadge />
+                                    )}
+                                    {user.role === 'mentor' && !user.isMentorApproved && !stats?.isVerified && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                            Pending Approval
+                                        </span>
                                     )}
                                 </div>
                                 <p className="text-x-text-secondary">{user.email}</p>

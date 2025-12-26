@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signup } from '@/utils/auth';
+import { api } from '@/utils/api';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -12,13 +13,14 @@ export default function SignupPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('junior');
+    const [secretKey, setSecretKey] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // Get role from URL params if present
         const roleParam = searchParams.get('role');
-        if (roleParam === 'mentor' || roleParam === 'junior') {
+        if (roleParam === 'mentor' || roleParam === 'junior' || roleParam === 'admin') {
             setRole(roleParam);
         }
     }, [searchParams]);
@@ -28,14 +30,67 @@ export default function SignupPage() {
         setError('');
         setLoading(true);
 
-        const result = await signup(name, email, password, role);
+        try {
+            if (role === 'admin') {
+                // Admin registration requires secret key
+                if (!secretKey) {
+                    setError('Admin secret key is required');
+                    setLoading(false);
+                    return;
+                }
 
-        setLoading(false);
+                const response = await api.registerAdmin(name, email, password, secretKey);
+                if (response.success) {
+                    // Store token and user data
+                    localStorage.setItem('authToken', response.token);
+                    const userData = {
+                        id: response.data.userId,
+                        name: response.data.name,
+                        email: response.data.email,
+                        role: response.data.role,
+                    };
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    router.push('/admin');
+                } else {
+                    setError(response.message || 'Admin registration failed');
+                }
+            } else if (role === 'mentor') {
+                // Mentor registration requires secret key
+                if (!secretKey) {
+                    setError('Mentor secret key is required');
+                    setLoading(false);
+                    return;
+                }
 
-        if (result.success) {
-            router.push('/dashboard');
-        } else {
-            setError(result.error || 'Signup failed');
+                const response = await api.registerMentor(name, email, password, '', secretKey);
+                if (response.success) {
+                    // Store token and user data
+                    localStorage.setItem('authToken', response.token);
+                    const userData = {
+                        id: response.data.userId,
+                        name: response.data.name,
+                        email: response.data.email,
+                        role: response.data.role,
+                        isMentorApproved: response.data.isMentorApproved || false,
+                    };
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    router.push('/');
+                } else {
+                    setError(response.message || 'Mentor registration failed');
+                }
+            } else {
+                // Junior registration (no secret key)
+                const result = await signup(name, email, password, role);
+                if (result.success) {
+                    router.push('/');
+                } else {
+                    setError(result.error || 'Signup failed');
+                }
+            }
+        } catch (err) {
+            setError(err.message || 'Registration failed');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -125,14 +180,49 @@ export default function SignupPage() {
                                 >
                                     Mentor
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('admin')}
+                                    className={`flex-1 py-3 px-4 rounded-full font-medium transition-colors ${role === 'admin'
+                                        ? 'bg-red-500 text-white'
+                                        : 'bg-x-black border border-red-500/50 text-red-400 hover:border-red-500'
+                                        }`}
+                                >
+                                    Admin
+                                </button>
                             </div>
                         </div>
+
+                        {/* Secret Key field for Admin and Mentor */}
+                        {(role === 'admin' || role === 'mentor') && (
+                            <div>
+                                <label htmlFor="secretKey" className="block text-sm font-medium text-x-text mb-2">
+                                    {role === 'admin' ? 'Admin' : 'Mentor'} Secret Key
+                                </label>
+                                <input
+                                    id="secretKey"
+                                    type="password"
+                                    value={secretKey}
+                                    onChange={(e) => setSecretKey(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-lg bg-x-black border border-x-border text-x-text focus:outline-none focus:border-x-blue transition-colors"
+                                    placeholder={`Enter ${role} secret key`}
+                                    required
+                                />
+                                <p className="text-xs text-x-text-secondary mt-2">
+                                    {role === 'admin'
+                                        ? 'Contact the system administrator to get the admin secret key.'
+                                        : 'Contact the system administrator to get the mentor secret key. Your account will be pending approval after registration.'}
+                                </p>
+                            </div>
+                        )}
 
                         <button
                             type="submit"
                             disabled={loading}
                             className={`w-full py-3 rounded-full font-semibold transition-colors ${loading
-                                    ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                ? 'bg-x-blue/50 text-white/50 cursor-not-allowed'
+                                : role === 'admin'
+                                    ? 'bg-red-500 text-white hover:bg-red-600'
                                     : 'bg-x-blue text-white hover:bg-x-blue/90'
                                 }`}
                         >

@@ -8,11 +8,12 @@ import MentorBadge from '@/components/MentorBadge';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import Tag from '@/components/Tag';
 import CommentSection from '@/components/CommentSection';
-import { getCurrentUser, isMentor, isJunior } from '@/utils/auth';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { getCurrentUser, isMentor, isJunior, isAdmin } from '@/utils/auth';
 import { api } from '@/utils/api';
 
 // Separate component for Answer Item to avoid hooks in map
-function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
+function AnswerItem({ answer, doubt, user, doubtId, onRefresh, onDeleteAnswer }) {
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [replyContent, setReplyContent] = useState('');
     const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -171,6 +172,18 @@ function AnswerItem({ answer, doubt, user, doubtId, onRefresh }) {
                                 {showReplyForm ? 'Cancel' : 'Reply to Mentor'}
                             </button>
                         )}
+
+                        {user?.role === 'admin' && (
+                            <button
+                                onClick={() => onDeleteAnswer(answer._id)}
+                                className="text-sm text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete
+                            </button>
+                        )}
                     </div>
 
                     {/* Reply Form - Only for Doubt Poster */}
@@ -266,6 +279,12 @@ export default function DoubtDetailPage({ params }) {
     const [answerContent, setAnswerContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+    const [deleteDialog, setDeleteDialog] = useState({
+        isOpen: false,
+        type: null, // 'doubt' or 'answer'
+        id: null,
+        title: ''
+    });
     const doubtId = params.id;
 
     useEffect(() => {
@@ -335,6 +354,34 @@ export default function DoubtDetailPage({ params }) {
             setSubmitError(err.message || 'Failed to post answer. Please try again.');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteDoubt = async () => {
+        try {
+            const response = await api.adminDeleteDoubt(doubtId);
+            if (response.success) {
+                router.push('/'); // Redirect to home after deletion
+            }
+        } catch (err) {
+            console.error('Error deleting doubt:', err);
+            alert('Failed to delete doubt: ' + (err.message || 'Unknown error'));
+        } finally {
+            setDeleteDialog({ ...deleteDialog, isOpen: false });
+        }
+    };
+
+    const handleDeleteAnswer = async () => {
+        try {
+            const response = await api.adminDeleteAnswer(deleteDialog.id);
+            if (response.success) {
+                await fetchDoubtDetails(); // Refresh to remove deleted answer
+            }
+        } catch (err) {
+            console.error('Error deleting answer:', err);
+            alert('Failed to delete answer: ' + (err.message || 'Unknown error'));
+        } finally {
+            setDeleteDialog({ ...deleteDialog, isOpen: false });
         }
     };
 
@@ -408,11 +455,28 @@ export default function DoubtDetailPage({ params }) {
 
                             <p className="text-x-text text-base mb-3 whitespace-pre-wrap">{doubt.description}</p>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 mb-3">
                                 {doubt.tags?.map((tag, index) => (
                                     <Tag key={index}>{tag}</Tag>
                                 ))}
                             </div>
+
+                            {isAdmin() && (
+                                <button
+                                    onClick={() => setDeleteDialog({
+                                        isOpen: true,
+                                        type: 'doubt',
+                                        id: doubtId,
+                                        title: doubt.title
+                                    })}
+                                    className="mt-2 px-3 py-1.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 text-sm font-semibold transition-colors flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Delete Doubt (Admin)
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -439,6 +503,12 @@ export default function DoubtDetailPage({ params }) {
                             user={user}
                             doubtId={doubtId}
                             onRefresh={fetchDoubtDetails}
+                            onDeleteAnswer={(answerId) => setDeleteDialog({
+                                isOpen: true,
+                                type: 'answer',
+                                id: answerId,
+                                title: 'this answer'
+                            })}
                         />
                     ))}
 
@@ -494,6 +564,27 @@ export default function DoubtDetailPage({ params }) {
             </main>
 
             <RightSidebar />
+
+            {/* Admin Delete Confirmation Dialogs */}
+            <ConfirmDialog
+                isOpen={deleteDialog.isOpen && deleteDialog.type === 'doubt'}
+                onClose={() => setDeleteDialog({ ...deleteDialog, isOpen: false })}
+                onConfirm={handleDeleteDoubt}
+                title="Delete Doubt"
+                message={`Are you sure you want to delete "${deleteDialog.title}"? This will also delete all answers and comments. This action cannot be undone.`}
+                confirmText="Delete Doubt"
+                type="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={deleteDialog.isOpen && deleteDialog.type === 'answer'}
+                onClose={() => setDeleteDialog({ ...deleteDialog, isOpen: false })}
+                onConfirm={handleDeleteAnswer}
+                title="Delete Answer"
+                message="Are you sure you want to delete this answer? This action cannot be undone."
+                confirmText="Delete Answer"
+                type="danger"
+            />
         </div>
     );
 }

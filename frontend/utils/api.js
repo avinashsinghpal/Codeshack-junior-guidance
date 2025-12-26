@@ -57,6 +57,20 @@ export const api = {
         });
     },
 
+    registerAdmin: async (name, email, password, secretKey) => {
+        return apiCall('/admin/register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password, secretKey }),
+        });
+    },
+
+    registerMentor: async (name, email, password, bio, secretKey) => {
+        return apiCall('/mentor-profiles/register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password, bio, secretKey }),
+        });
+    },
+
     // User Profile
     getUserProfile: async (userId) => {
         return apiCall(`/users/${userId}`);
@@ -85,6 +99,10 @@ export const api = {
         return apiCall(`/users/${userId}/stats`);
     },
 
+    getUsersByRole: async (role, page = 1, limit = 10) => {
+        return apiCall(`/users/role/${role}?page=${page}&limit=${limit}`);
+    },
+
     // Doubts
     getDoubts: async (page = 1, limit = 10) => {
         return apiCall(`/doubts?page=${page}&limit=${limit}`);
@@ -99,6 +117,10 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ title, description, tags }),
         });
+    },
+
+    getDoubtStats: async () => {
+        return apiCall('/doubts/stats/overview');
     },
 
     updateDoubt: async (doubtId, data) => {
@@ -220,6 +242,75 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ content }),
         });
+    },
+
+    // Admin - Mentor Management
+    approveMentor: async (mentorId) => {
+        return apiCall(`/admin/approve-mentor/${mentorId}`, {
+            method: 'POST',
+        });
+    },
+
+    rejectMentor: async (mentorId) => {
+        return apiCall(`/admin/reject-mentor/${mentorId}`, {
+            method: 'POST',
+        });
+    },
+
+    getPendingMentors: async (page = 1, limit = 10) => {
+        return apiCall(`/mentor-profiles/pending?page=${page}&limit=${limit}`);
+    },
+
+    getUnverifiedMentors: async (page = 1, limit = 50) => {
+        return apiCall(`/admin/unverified-mentors?page=${page}&limit=${limit}`);
+    },
+
+    // Admin - Content Moderation
+    adminDeleteDoubt: async (doubtId) => {
+        return apiCall(`/admin/doubt/${doubtId}`, {
+            method: 'DELETE',
+        });
+    },
+
+    adminDeleteAnswer: async (answerId) => {
+        return apiCall(`/admin/answer/${answerId}`, {
+            method: 'DELETE',
+        });
+    },
+
+    adminDeleteComment: async (commentId) => {
+        return apiCall(`/admin/comment/${commentId}`, {
+            method: 'DELETE',
+        });
+    },
+
+    adminDeleteJuniorPost: async (postId) => {
+        return apiCall(`/admin/junior-post/${postId}`, {
+            method: 'DELETE',
+        });
+    },
+
+    // Admin - User Management
+    banUser: async (userId) => {
+        return apiCall(`/admin/ban-user/${userId}`, {
+            method: 'POST',
+        });
+    },
+
+    unbanUser: async (userId) => {
+        return apiCall(`/admin/unban-user/${userId}`, {
+            method: 'POST',
+        });
+    },
+
+    // Admin - Activity & Stats
+    getAdminActions: async (page = 1, limit = 20, actionType = null) => {
+        const params = `page=${page}&limit=${limit}${actionType ? `&actionType=${actionType}` : ''}`;
+        return apiCall(`/admin/actions?${params}`);
+    },
+
+    getAdminStats: async () => {
+        return apiCall('/admin/stats');
     },
 };
 

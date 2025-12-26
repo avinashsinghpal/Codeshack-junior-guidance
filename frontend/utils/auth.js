@@ -10,12 +10,13 @@ export const login = async (email, password) => {
             // Store token
             localStorage.setItem('authToken', response.token);
 
-            // Store user data
+            // Store user data including mentor approval status
             const userData = {
                 id: response.data.userId,
                 name: response.data.name,
                 email: response.data.email,
                 role: response.data.role,
+                isMentorApproved: response.data.isMentorApproved || false,
             };
             localStorage.setItem('user', JSON.stringify(userData));
 
@@ -36,12 +37,13 @@ export const signup = async (name, email, password, role) => {
             // Store token
             localStorage.setItem('authToken', response.token);
 
-            // Store user data
+            // Store user data including mentor approval status
             const userData = {
                 id: response.data.userId,
                 name: response.data.name,
                 email: response.data.email,
                 role: response.data.role,
+                isMentorApproved: response.data.isMentorApproved || false,
             };
             localStorage.setItem('user', JSON.stringify(userData));
 
@@ -94,4 +96,9 @@ export const isJunior = () => {
 export const isAdmin = () => {
     const user = getCurrentUser();
     return user?.role === 'admin';
+};
+
+export const isMentorApproved = () => {
+    const user = getCurrentUser();
+    return user?.role === 'mentor' && user?.isMentorApproved === true;
 };

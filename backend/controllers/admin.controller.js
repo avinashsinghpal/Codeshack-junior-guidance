@@ -476,3 +476,43 @@ export const getAdminStats = async (req, res) => {
         });
     }
 };
+
+export const getUnverifiedMentors = async (req, res) => {
+    try {
+        const { page = 1, limit = 50 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Find all users with role='mentor' and isMentorApproved=false
+        const unverifiedMentors = await User.find({
+            role: "mentor",
+            isMentorApproved: false,
+        })
+            .select("name email bio createdAt")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean();
+
+        const total = await User.countDocuments({
+            role: "mentor",
+            isMentorApproved: false,
+        });
+
+        res.status(200).json({
+            success: true,
+            data: unverifiedMentors,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / parseInt(limit)),
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching unverified mentors",
+            error: error.message,
+        });
+    }
+};

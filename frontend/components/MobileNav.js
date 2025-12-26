@@ -22,8 +22,7 @@ export default function MobileNav() {
                 path: '/',
                 icon: (
                     <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
-                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                        <path d="M12 9l-7 7h4v5h6v-5h4l-7-7z" />
+                        <path d="M12 3l-10 9h3v9h6v-6h2v6h6v-9h3l-10-9zm0 2.2l6 5.4v8.4h-2v-6h-8v6h-2v-8.4l6-5.4z" />
                     </svg>
                 ),
                 roles: ['junior', 'mentor', 'admin']
@@ -78,15 +77,15 @@ export default function MobileNav() {
     const navItems = getNavItems();
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-x-black border-t border-x-border z-50">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-nav z-50">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => (
                     <Link
                         key={item.path}
                         href={item.path}
-                        className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${pathname === item.path
-                                ? 'text-x-blue'
-                                : 'text-x-text-secondary hover:text-x-text'
+                        className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 ${pathname === item.path
+                            ? 'text-x-blue'
+                            : 'text-x-text-secondary hover:text-x-text'
                             }`}
                     >
                         <span className="mb-1">{item.icon}</span>
